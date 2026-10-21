@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added — 2026-10-21
+
+- scripts/multisig-admin-demo.sh: end-to-end multisig governance demo script
+  (#109). Covers all five steps: deploy a 1-of-1 multisig, call
+  `vesting.transfer_admin` to hand admin rights to the multisig, submit a
+  `ProposalAction::Call` proposal targeting `vesting.pause`, confirm it (single
+  owner, threshold = 1), and execute it. Step 6 reads `is_paused()` and asserts
+  the result is `true`. Includes `set -euo pipefail`, inline comments for each
+  step, usage instructions at the top, and prints all contract IDs and Stellar
+  Expert links on completion. Accepts `TOKEN_ID` and `VESTING_ID` as environment
+  variables or positional arguments.
+
 ### Added — 2026-10-19
 
 - docs/api.md: REST API reference for the backend (#60). One
