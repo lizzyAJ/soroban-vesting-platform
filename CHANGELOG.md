@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added — 2026-10-21
+
+- frontend/js/app.js: `validateAddress(addr)` and `validateAmount(val)` input
+  validation helpers (#112). `validateAddress` uses the Stellar Ed25519 public
+  key regex (`/^G[A-Z2-7]{55}$/`) to reject invalid addresses before any API
+  call. `validateAmount` rejects non-positive and non-finite numbers. Both
+  validators are applied before every form submission across the vesting, token,
+  and multisig tabs. Errors are shown in the per-form result element using
+  `textContent` — no `alert()`, no `innerHTML`. No API round-trips are made for
+  invalid input.
+
+- frontend/js/app.js: `showError(message)` and `showSuccess(message)` helpers
+  (#111). Display user-visible error/success messages in a dedicated
+  `#status-message` element using `textContent` (never `innerHTML`) to
+  prevent XSS. Replaced all `innerHTML` usages in the token info grid and
+  multisig owners list with safe DOM creation. API errors are now surfaced
+  to the user instead of silently failing. `#status-message` div already
+  present in `frontend/index.html`.
+
+- contracts/common: new workspace crate at `contracts/common/` (#113). Defines
+  the four shared TTL constants (`INSTANCE_BUMP_LEDGERS`, `INSTANCE_BUMP_THRESHOLD`,
+  `PERSISTENT_BUMP_LEDGERS`, `PERSISTENT_BUMP_THRESHOLD`) in a single source of
+  truth. All three contract crates (`token`, `vesting`, `multisig`) now depend on
+  `common` and re-export the constants via `pub use common::{…}`, eliminating the
+  risk of values diverging across crates. `contracts/common` added as the first
+  member of the workspace in the root `Cargo.toml`.
+
+- scripts/multisig-admin-demo.sh: end-to-end multisig governance demo script
+  (#109). Covers all five steps: deploy a 1-of-1 multisig, call
+  `vesting.transfer_admin` to hand admin rights to the multisig, submit a
+  `ProposalAction::Call` proposal targeting `vesting.pause`, confirm it (single
+  owner, threshold = 1), and execute it. Step 6 reads `is_paused()` and asserts
+  the result is `true`. Includes `set -euo pipefail`, inline comments for each
+  step, usage instructions at the top, and prints all contract IDs and Stellar
+  Expert links on completion. Accepts `TOKEN_ID` and `VESTING_ID` as environment
+  variables or positional arguments.
+
 ### Added — 2026-10-19
 
 - docs/api.md: REST API reference for the backend (#60). One
