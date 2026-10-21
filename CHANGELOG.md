@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added — 2026-10-21
 
+- frontend/js/app.js: `validateAddress(addr)` and `validateAmount(val)` input
+  validation helpers (#112). `validateAddress` uses the Stellar Ed25519 public
+  key regex (`/^G[A-Z2-7]{55}$/`) to reject invalid addresses before any API
+  call. `validateAmount` rejects non-positive and non-finite numbers. Both
+  validators are applied before every form submission across the vesting, token,
+  and multisig tabs (7 handlers total). Errors are shown in the per-form result
+  element using `textContent` — no `alert()`, no `innerHTML`. No API round-trips
+  are made for invalid input.
+
 - frontend/js/app.js: `showError(message)` and `showSuccess(message)` helpers
   (#111). Display user-visible error/success messages in a dedicated
   `#status-message` element using `textContent` (never `innerHTML`) to
