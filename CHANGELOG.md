@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added — 2026-10-21
+
+- frontend/js/app.js: `showError(message)` and `showSuccess(message)` helpers
+  (#111). Display user-visible error/success messages in a dedicated
+  `#status-message` element using `textContent` (never `innerHTML`) to
+  prevent XSS. All fetch calls are wrapped with error handling via `apiFetch`
+  which returns `{ ok, data, error }` — non-2xx responses surface the API
+  error message to the user instead of silently failing. The `#status-message`
+  div is present in `frontend/index.html`. Token info grid and multisig owners
+  list use safe DOM creation (no `innerHTML`).
+
 ### Added — 2026-10-19
 
 - docs/api.md: REST API reference for the backend (#60). One
