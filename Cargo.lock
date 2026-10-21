@@ -313,6 +313,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+
+[[package]]
 name = "const-oid"
 version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1133,6 +1137,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 name = "multisig"
 version = "0.1.0"
 dependencies = [
+ "common",
  "soroban-sdk",
 ]
 
@@ -1983,6 +1988,7 @@ checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
 name = "token"
 version = "0.1.0"
 dependencies = [
+ "common",
  "proptest",
  "soroban-sdk",
 ]
@@ -2015,6 +2021,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 name = "vesting"
 version = "0.1.0"
 dependencies = [
+ "common",
  "multisig",
  "proptest",
  "soroban-sdk",
