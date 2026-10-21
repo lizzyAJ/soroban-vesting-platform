@@ -6,17 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added — 2026-10-21
+### Fixed — 2026-10-21
 
-- scripts/multisig-admin-demo.sh: end-to-end multisig governance demo script
-  (#109). Covers all five steps: deploy a 1-of-1 multisig, call
-  `vesting.transfer_admin` to hand admin rights to the multisig, submit a
-  `ProposalAction::Call` proposal targeting `vesting.pause`, confirm it (single
-  owner, threshold = 1), and execute it. Step 6 reads `is_paused()` and asserts
-  the result is `true`. Includes `set -euo pipefail`, inline comments for each
-  step, usage instructions at the top, and prints all contract IDs and Stellar
-  Expert links on completion. Accepts `TOKEN_ID` and `VESTING_ID` as environment
-  variables or positional arguments.
+- Makefile: `setup` target now installs `wasm32v1-none` instead of the
+  outdated `wasm32-unknown-unknown` target (#59).
+
+- Makefile: `build` target now uses `stellar contract build` instead of
+  `cargo build --all --target wasm32-unknown-unknown --release` (#59).
+
+- Makefile: `build-optimized` target now references
+  `target/wasm32v1-none/release/` instead of
+  `target/wasm32-unknown-unknown/release/` (#59).
+
+- Makefile: `lint` target now runs
+  `cargo clippy --all --target wasm32v1-none -- -D warnings` to match the
+  exact CI invocation, replacing `--all-targets` which diverged from CI (#59).
+
 
 ### Added — 2026-10-19
 
