@@ -194,7 +194,7 @@ impl VestingContract {
         schedule.beneficiary.require_auth();
 
         if schedule.status != ScheduleStatus::Active {
-            panic_with_error!(&env, VestingError::ScheduleNotActive);
+            panic!("schedule is not active");
         }
 
         let now = env.ledger().timestamp();
@@ -1101,6 +1101,80 @@ mod tests {
         assert_eq!(sched.status, ScheduleStatus::Revoked);
     }
 
+    // ── revoke after schedule has fully vested ───────────────────────────────
+    //
+    // When revoke() is called after total_duration has elapsed, all tokens are
+    // already vested. The unvested portion is 0, so nothing is returned to the
+    // recipient. The beneficiary receives all unclaimed vested tokens (the full
+    // total_amount since no prior claims were made).
+    //
+    // Schedule: cliff_duration=0, total_duration=100, total_amount=100_000
+    // Revoke at t = start + 200 (past end):
+    //   - vested = total_amount = 100_000
+    //   - unvested = 0
+    //   - unclaimed_vested = total_amount - 0 = 100_000
+    //
+    // Expected:
+    //   - return value == 0 (no unvested tokens)
+    //   - beneficiary balance == 100_000 (all vested, paid on revoke)
+    //   - recipient balance == 0
+    //   - schedule.status == ScheduleStatus::Revoked
+    #[test]
+    fn test_revoke_after_full_vest() {
+        let (env, vesting_id, _admin, beneficiary, funder) = setup();
+        let token = new_token(&env, &funder, 100_000);
+        let vesting = VestingContractClient::new(&env, &vesting_id);
+        let recipient = Address::generate(&env);
+        let start = env.ledger().timestamp();
+
+        let id = vesting.create_schedule(&CreateScheduleParams {
+            from: funder.clone(),
+            beneficiary: beneficiary.clone(),
+            token_address: token.clone(),
+            total_amount: 100_000,
+            start_time: start,
+            cliff_duration: 0,
+            total_duration: 100,
+        });
+
+        // Advance ledger to start + 200 (past end of schedule)
+        env.ledger().with_mut(|l| l.timestamp = start + 200);
+
+        // All tokens are vested; revoke should return 0 unvested
+        let returned = vesting.revoke(&id, &recipient);
+        assert_eq!(returned, 0, "revoke after full vest must return 0 unvested");
+
+        // Beneficiary receives the full amount (all vested, none previously claimed)
+        let token_client = soroban_sdk::token::Client::new(&env, &token);
+        assert_eq!(
+            token_client.balance(&beneficiary),
+            100_000,
+            "beneficiary must receive full total_amount when all tokens are vested"
+        );
+
+        // Recipient receives nothing (no unvested tokens)
+        assert_eq!(
+            token_client.balance(&recipient),
+            0,
+            "recipient must receive 0 when there are no unvested tokens"
+        );
+
+        // Schedule is marked Revoked
+        let sched = vesting.get_schedule(&id);
+        assert_eq!(
+            sched.status,
+            ScheduleStatus::Revoked,
+            "schedule status must be Revoked after revoke()"
+        );
+
+        // Vesting contract holds nothing
+        assert_eq!(
+            token_client.balance(&vesting_id),
+            0,
+            "vesting contract must hold 0 tokens after revoke"
+        );
+    }
+
     // ── revoke before cliff: 0 vested, 100% returned to recipient ────────────
 
     /// When revoke() is called before the cliff period has elapsed, zero tokens
@@ -1195,6 +1269,56 @@ mod tests {
         env.ledger().with_mut(|l| l.timestamp = start + 50);
         vesting.revoke(&id, &admin);
         vesting.claim(&id); // must panic with VestingError::ScheduleNotActive
+    }
+
+    // ── claim on a completed schedule must error with "schedule is not active"
+
+    /// After the beneficiary claims the final tranche of a vesting schedule,
+    /// the schedule status transitions to Completed. A subsequent call to
+    /// claim() on that schedule must panic with "schedule is not active".
+    ///
+    /// Schedule: cliff_duration=0, total_duration=100, total_amount=100_000
+    /// 1. Advance to start + 100 (fully vested).
+    /// 2. First claim() returns 100_000 — schedule transitions to Completed.
+    /// 3. Second claim() must panic with "schedule is not active".
+    #[test]
+    #[should_panic(expected = "schedule is not active")]
+    fn test_claim_on_completed_schedule_panics() {
+        let (env, vesting_id, _admin, beneficiary, funder) = setup();
+        let token = new_token(&env, &funder, 100_000);
+        let vesting = VestingContractClient::new(&env, &vesting_id);
+        let start = env.ledger().timestamp();
+
+        let id = vesting.create_schedule(&CreateScheduleParams {
+            from: funder.clone(),
+            beneficiary: beneficiary.clone(),
+            token_address: token.clone(),
+            total_amount: 100_000,
+            start_time: start,
+            cliff_duration: 0,
+            total_duration: 100,
+        });
+
+        // Advance past full duration so all tokens are claimable.
+        env.ledger().with_mut(|l| l.timestamp = start + 100);
+
+        // First claim succeeds and returns the full total_amount.
+        let first_claim = vesting.claim(&id);
+        assert_eq!(
+            first_claim, 100_000,
+            "first claim must return the full total_amount"
+        );
+
+        // Schedule is now Completed.
+        let sched = vesting.get_schedule(&id);
+        assert_eq!(
+            sched.status,
+            ScheduleStatus::Completed,
+            "schedule must be Completed after claiming all tokens"
+        );
+
+        // Second claim on a Completed schedule must panic with "schedule is not active".
+        vesting.claim(&id);
     }
 
     // ── nothing to claim before cliff ────────────────────────────────────────

@@ -95,6 +95,26 @@ cargo test --all & (cd backend && npm test) && wait
 
 ---
 
+## Running All CI Checks Locally
+
+Use `make ci-check` to run every check that CI runs, in the same order, with
+a single command. It fails fast on the first error so you can fix issues
+before pushing.
+
+```bash
+make ci-check
+```
+
+This runs the following five steps in order:
+
+1. `cargo fmt --all -- --check` — formatting check
+2. `cargo clippy --all --target wasm32v1-none -- -D warnings` — linting
+3. `cargo test --all --locked` — contract unit tests
+4. `cd backend && npm run lint` — backend ESLint
+5. `cd backend && npm test` — backend Jest tests
+
+---
+
 ## PR Process
 
 ### Branch naming
