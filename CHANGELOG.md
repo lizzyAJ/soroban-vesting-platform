@@ -6,25 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Added — 2026-10-21
+### Fixed — 2026-10-21
 
-- frontend/js/app.js: `validateAddress(addr)` and `validateAmount(val)` input
-  validation helpers (#112). `validateAddress` uses the Stellar Ed25519 public
-  key regex (`/^G[A-Z2-7]{55}$/`) to reject invalid addresses before any API
-  call. `validateAmount` rejects non-positive and non-finite numbers. Both
-  validators are applied before every form submission across the vesting, token,
-  and multisig tabs (7 handlers total). Errors are shown in the per-form result
-  element using `textContent` — no `alert()`, no `innerHTML`. No API round-trips
-  are made for invalid input.
+- Makefile: `setup` target now installs `wasm32v1-none` instead of the
+  outdated `wasm32-unknown-unknown` target (#59).
 
-- frontend/js/app.js: `showError(message)` and `showSuccess(message)` helpers
-  (#111). Display user-visible error/success messages in a dedicated
-  `#status-message` element using `textContent` (never `innerHTML`) to
-  prevent XSS. All fetch calls are wrapped with error handling via `apiFetch`
-  which returns `{ ok, data, error }` — non-2xx responses surface the API
-  error message to the user instead of silently failing. The `#status-message`
-  div is present in `frontend/index.html`. Token info grid and multisig owners
-  list use safe DOM creation (no `innerHTML`).
+- Makefile: `build` target now uses `stellar contract build` instead of
+  `cargo build --all --target wasm32-unknown-unknown --release` (#59).
+
+- Makefile: `build-optimized` target now references
+  `target/wasm32v1-none/release/` instead of
+  `target/wasm32-unknown-unknown/release/` (#59).
+
+- Makefile: `lint` target now runs
+  `cargo clippy --all --target wasm32v1-none -- -D warnings` to match the
+  exact CI invocation, replacing `--all-targets` which diverged from CI (#59).
+
 
 ### Added — 2026-10-19
 
